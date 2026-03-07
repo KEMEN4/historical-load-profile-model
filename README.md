@@ -67,6 +67,9 @@ The parameters used include:
 - infiltration rate
 
 ---
+Some equations for heat balance and heat transfer
+are taken from the **HVAC (Heating, Ventilation and Air Conditioning)** course MA1
+---
 
 ## Principle of the thermal model
 
