@@ -36,7 +36,8 @@ src/ → Python scripts for the model:
 
 ## Weather Data
 
-The weather data comes from **Meteoblue**.
+The weather data comes from **Meteoblue**. 
+Brussels weather data (January 1, 2025 - December 31, 2025)
 
 The variables used are:
 
