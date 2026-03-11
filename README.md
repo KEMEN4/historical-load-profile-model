@@ -106,3 +106,17 @@ These equations allow us to estimate:
 ## Model Execution
 
 To start the simulation:
+- run the main script from the root directory of the project:
+
+python -m src.main
+
+This script performs the following steps:
+- loads the weather data
+- computes geometry and thermal properties
+- calculates internal and solar gains
+- runs the dynamic thermal simulation
+- converts heating and cooling loads into electrical demand
+
+The generated load profiles are saved as a CSV file in:
+
+results/tables/load_profiles_energy_balance.csv
