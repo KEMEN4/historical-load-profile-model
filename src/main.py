@@ -12,6 +12,7 @@ This script assembles the simplified physics-based model by:
 
 from pathlib import Path
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from src.data_loading import load_weather_data
 from src.geometry import compute_geometry
@@ -123,8 +124,56 @@ def main():
 
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(output_csv, index_label="timestamp")
+    
 
     print(f"Results saved to: {output_csv}")
+     plot_profiles(out, weather)
+
+def plot_profiles(out, weather):
+    
+    # Heating and Cooling
+    plt.figure(figsize=(14,4))
+    plt.plot(out.index, out["HeatingLoad_kW"], label="Heating load (kW)")
+    plt.plot(out.index, out["CoolingLoad_kW"], label="Cooling load (kW)")
+    plt.xlabel("Time")
+    plt.ylabel("kW")
+    plt.title("Heating and Cooling Load Profiles")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # Electricity
+    plt.figure(figsize=(14,4))
+    plt.plot(out.index, out["BaseElectric_kW"], label="Base electricity (kW)")
+    plt.plot(out.index, out["HVACElectric_kW"], label="HVAC electricity (kW)")
+    plt.plot(out.index, out["TotalElectric_kW"], label="Total electricity (kW)")
+    plt.xlabel("Time")
+    plt.ylabel("kW")
+    plt.title("Electric Load Profiles")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # COP / EER
+    plt.figure(figsize=(14,4))
+    plt.plot(out.index, out["COP"], label="COP")
+    plt.plot(out.index, out["EER"], label="EER")
+    plt.xlabel("Time")
+    plt.ylabel("[-]")
+    plt.title("Heat Pump Performance")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # Outdoor temperature
+    plt.figure(figsize=(14,4))
+    plt.plot(out.index, out["Tout_C"], label="Outdoor temperature")
+    plt.xlabel("Time")
+    plt.ylabel("°C")
+    plt.title("Outdoor Temperature Profile")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
