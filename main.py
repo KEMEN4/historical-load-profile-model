@@ -27,7 +27,7 @@ def main():
     # ============================================================
     # Input / output paths
     # ============================================================
-    BASE_DIR = Path(__file__).resolve().parent.parent
+    BASE_DIR = Path(__file__).resolve().parent
 
     weather_csv = BASE_DIR / "data" / "raw" / "dataexport_20260228T140237.csv"
     output_csv = BASE_DIR / "results" / "tables" / "load_profiles_energy_balance.csv"
