@@ -27,9 +27,10 @@ def main():
     # ============================================================
     # Input / output paths
     # ============================================================
+    BASE_DIR = Path(__file__).resolve().parent.parent
 
-    weather_csv = Path("data/raw/dataexport_20260228T140237.csv")
-    output_csv = Path("results/tables/load_profiles_energy_balance.csv")
+    weather_csv = BASE_DIR / "data" / "raw" / "dataexport_20260228T140237.csv"
+    output_csv = BASE_DIR / "results" / "tables" / "load_profiles_energy_balance.csv"
 
     # ============================================================
     # Load weather data
@@ -124,12 +125,18 @@ def main():
 
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(output_csv, index_label="timestamp")
-    
 
+    # create figures directory
+    figures_dir = BASE_DIR / "results" / "figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
     print(f"Results saved to: {output_csv}")
-     plot_profiles(out, weather)
 
-def plot_profiles(out, weather):
+    plot_profiles(out, weather, figures_dir)
+    figures_dir = BASE_DIR / "results" / "figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
+
+    plot_profiles(out, weather, figures_dir)
+def plot_profiles(out, weather, figures_dir):
     
     # Heating and Cooling
     plt.figure(figsize=(14,4))
@@ -140,7 +147,8 @@ def plot_profiles(out, weather):
     plt.title("Heating and Cooling Load Profiles")
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    plt.savefig(figures_dir / "heating_cooling.png", dpi=300, bbox_inches="tight")
+    plt.close()
 
     # Electricity
     plt.figure(figsize=(14,4))
@@ -152,7 +160,8 @@ def plot_profiles(out, weather):
     plt.title("Electric Load Profiles")
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    plt.savefig(figures_dir / "electricity.png", dpi=300, bbox_inches="tight")
+    plt.close()
 
     # COP / EER
     plt.figure(figsize=(14,4))
@@ -163,7 +172,8 @@ def plot_profiles(out, weather):
     plt.title("Heat Pump Performance")
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    plt.savefig(figures_dir / "cop_eer.png", dpi=300, bbox_inches="tight")
+    plt.close()
 
     # Outdoor temperature
     plt.figure(figsize=(14,4))
@@ -173,8 +183,16 @@ def plot_profiles(out, weather):
     plt.title("Outdoor Temperature Profile")
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    plt.savefig(figures_dir / "outdoor_temperature.png", dpi=300, bbox_inches="tight")
+    plt.close()
 
 
 if __name__ == "__main__":
     main()
+
+
+
+   
+
+
+
