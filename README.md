@@ -108,7 +108,7 @@ These equations allow us to estimate:
 To start the simulation:
 - run the main script from the root directory of the project:
 
-python -m src.main
+python src/main.py
 
 This script performs the following steps:
 - loads the weather data
