@@ -120,3 +120,13 @@ This script performs the following steps:
 The generated load profiles are saved as a CSV file in:
 
 results/tables/load_profiles_energy_balance.csv
+
+## Weather data
+
+The original model was developed using Meteoblue weather data for Basel.
+For this thesis, the weather input has been updated to use hourly data for Brussels (2025) from the NASA POWER database(power access climate data).
+
+The dataset includes:
+- Outdoor temperature (T2M)
+- Wind speed (WS10M)
+- Global solar irradiance (ALLSKY_SFC_SW_DWN)
