@@ -28,7 +28,7 @@ T_cool_set = 25.0      # [°C]
 # Not explicitly given in the articles.
 # Typical residential plug loads range between 3–5 W/m².
 
-EPD = 4.0              # [W/m²]
+EPD = 8.0              # [W/m²]
 
 
 # ============================================================
