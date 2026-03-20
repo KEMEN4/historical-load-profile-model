@@ -113,7 +113,7 @@ Minimum temperature lift and clipping are applied to ensure physical realism.
 To start the simulation:
 - run the main script from the root directory of the project:
 
-python src/main.py
+python src/main1.py
 
 This script performs the following steps:
 - loads the weather data
