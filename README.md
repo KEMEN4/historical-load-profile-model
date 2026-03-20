@@ -90,16 +90,21 @@ where:
 
 ## COP and EER Model
 
-The electrical consumption of the HVAC system is calculated from the **COP (Coefficient of Performance)** and the **EER (Energy Efficiency Ratio)**.
+Heat pump performance model
 
-The expressions for COP and EER as a function of outdoor temperature are taken from the article:
+The coefficient of performance (COP) and energy efficiency ratio (EER) are computed using a modified Carnot approach.
 
-Energies (2018) – Heat pump performance curves.
+For heating
 
-These equations allow us to estimate:
+For cooling
+Efficiency factors account for real system losses:
 
-- the electrical power required for heating
-- the electrical power required for cooling
+ηheating=0.45
+
+ηcooling=0.35
+	
+
+Minimum temperature lift and clipping are applied to ensure physical realism.
 
 ---
 
