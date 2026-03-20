@@ -15,48 +15,42 @@ box-model representation consistent with the notebook implementation.
 
 import math
 
-from .building_parameters import A_cond, floors, WWR
+from .building_parameters import A_cond, floors, A_window
 from .model_assumptions import h_floor
 
 
 def compute_geometry():
     """
-    Compute simplified building geometry used in the notebook model.
-
-    Returns
-    -------
-    dict
-        Dictionary containing reconstructed geometry values.
+    Compute simplified rectangular building geometry.
     """
 
-    # Building footprint area [m²]
+    # Footprint area
     A_foot = A_cond / floors
 
-    # Assume square footprint for simplified box model
-    side = math.sqrt(A_foot)
+    # Assume rectangular terraced house
+    depth = 8.0
+    width = A_foot / depth
 
-    # Perimeter of simplified square plan [m]
-    perim = 4.0 * side
+    # Perimeter
+    perim = 2.0 * (width + depth)
 
-    # Total building height [m]
+    # Building height
     height = floors * h_floor
 
-    # Gross external wall area [m²]
+    # Gross external wall area
     A_wall_gross = perim * height
 
-    # Window area from window-to-wall ratio [m²]
-    A_window = WWR * A_wall_gross
-
-    # Opaque wall area [m²]
+    # Use article-based window area (do NOT recompute it)
     A_wall_opaque = A_wall_gross - A_window
 
-    # Simplified roof and ground areas [m²]
+    # Roof and ground
     A_roof = A_foot
     A_ground = A_foot
 
     return {
         "A_foot": A_foot,
-        "side": side,
+        "width": width,
+        "depth": depth,
         "perim": perim,
         "height": height,
         "A_wall_gross": A_wall_gross,
