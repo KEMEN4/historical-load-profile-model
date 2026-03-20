@@ -1,30 +1,51 @@
 """
 Dynamic building simulation for the simplified energy balance model.
 
-This module performs the hourly simulation of indoor temperature,
-heating load, and cooling load using the same logic as the original
-notebook implementation.
+This version follows a physics-based logic:
+- free-floating indoor temperature is first computed
+- heating is applied only if indoor temperature drops below heating setpoint
+- cooling is applied only if indoor temperature exceeds cooling setpoint
+- natural ventilation is used as a passive summer comfort mechanism
+  when indoor air is warm and outdoor air is cooler
 
-Inputs:
-- outdoor temperature
-- solar gains
-- internal gains
-- thermal properties
 
-Outputs:
-- indoor temperature
-- HVAC load
-- heating demand
-- cooling demand
 """
 
 import numpy as np
+import pandas as pd
+from pandas.io.formats.format import return_docstring
 
 from src.building_parameters import T_heat_set
 from src.model_assumptions import T_cool_set
 
 
-def run_simulation(Tout, Q_solar, Q_int, thermal_props, dt=3600.0):
+def heating_setpoint(ts):
+    """
+    Simplified heating setpoint schedule.
+
+    Based on the benchmark article:
+    - living areas around 21°C
+    - lower temperatures at night / reduced activity periods
+
+    This is a simplified whole-building representation.
+    """
+    h = ts.hour
+
+    # Lower night setpoint
+    if 0 <= h < 6:
+        return 17.0
+    elif 6 <=h <9:
+        return 20.0
+    elif 9 <=h < 17:
+        return 19.0
+    else:
+        return 21.0
+
+
+
+
+
+def run_simulation(Tout, Q_solar, Q_int, thermal_props, weather_index, dt=3600.0):
     """
     Run the hourly simplified building energy simulation.
 
@@ -37,16 +58,18 @@ def run_simulation(Tout, Q_solar, Q_int, thermal_props, dt=3600.0):
     Q_int : array-like
         Internal gains [W]
     thermal_props : dict
-        Dictionary containing thermal properties:
+        Dictionary containing:
         - H_total
         - C
+    weather_index : pandas.DatetimeIndex
+        Time index of the simulation
     dt : float, optional
-        Time step in seconds. Default is 3600 s (1 hour).
+        Time step in seconds
 
     Returns
     -------
     dict
-        Dictionary containing:
+        Dictionary with:
         - Tin
         - Q_hvac
         - Q_heat
@@ -56,29 +79,7 @@ def run_simulation(Tout, Q_solar, Q_int, thermal_props, dt=3600.0):
     Tout = np.asarray(Tout, dtype=float)
     Q_solar = np.asarray(Q_solar, dtype=float)
     Q_int = np.asarray(Q_int, dtype=float)
-
-    # ============================================================
-    # Optional uncertainty on outdoor temperature
-    # ============================================================
-    #
-    # Supervisor remark:
-    # "If you want you can start with adding uncertainty to the code,
-    # for example on the outside temperature. This then will affect
-    # your results for the demand and COP."
-    #
-    # The baseline version below keeps the simulation identical to the
-    # original notebook.
-    #
-    # To test the effect of uncertainty on outdoor temperature,
-    # uncomment the following two lines:
-    #
-    # sigma_T = 1.0  # standard deviation of temperature uncertainty [°C]
-    # Tout = Tout + np.random.normal(0, sigma_T, size=len(Tout))
-    #
-    # This can later be used to compare:
-    # - baseline demand vs uncertain demand
-    # - baseline COP vs uncertain COP
-    #
+    weather_index = pd.DatetimeIndex(weather_index)
 
     N = len(Tout)
 
@@ -90,44 +91,83 @@ def run_simulation(Tout, Q_solar, Q_int, thermal_props, dt=3600.0):
     Q_heat = np.zeros(N)
     Q_cool = np.zeros(N)
 
-    # Initial indoor temperature
     Tin[0] = T_heat_set
 
-    for k in range(N - 1):
+    # Deadband to avoid unrealistic switching
+    deadband = 0.5  # °C
 
-        # Free-floating indoor temperature without HVAC
+    for k in range(N - 1):
+        ts = weather_index[k]
+        T_heat_set_k = heating_setpoint(ts)
+
+        # Heating allowed depending on outdoor temperature
+        #if Tout[k]> 18:
+          #  heating_allowed = False
+        #else:
+         #   heating_allowed = True
+        heating_allowed = Tout[k] <= 16.0
+
+        # ------------------------------------------------------------
+        # Natural ventilation / window opening
+        # ------------------------------------------------------------
+        # Inspired by the Brussels benchmark article:
+        # occupants frequently open windows in summer to reduce overheating.
+        # We do not force it by month; we activate it only when physically useful.
+        #
+        # Conditions:
+        # - indoor temperature above cooling comfort threshold
+        # - outdoor air cooler than indoor air
+        # - mostly useful during daytime/evening warm periods
+       # if Tin[k] > T_cool_set and Tout[k] < Tin[k]:
+           # Q_natvent = -500.0  # W, simplified passive cooling assumption
+        #else:
+         #   Q_natvent = 0.0
+        if Tin[k] > T_cool_set and Tout[k] < Tin[k] and 8 <= ts.hour <= 22:
+            Q_natvent = -300.0 * (Tin[k] - Tout[k])
+        else:
+            Q_natvent = 0.0
+
+        # ------------------------------------------------------------
+        # Free-floating indoor temperature without active HVAC
+        # ------------------------------------------------------------
         Tin_free = Tin[k] + (dt / C) * (
-            H_total * (Tout[k] - Tin[k]) + Q_solar[k] + Q_int[k]
+            H_total * (Tout[k] - Tin[k]) + Q_solar[k] + Q_int[k] + Q_natvent
         )
 
-        # Heating mode
-        if Tin_free < T_heat_set:
-            Q_needed = ((T_heat_set - Tin[k]) * C / dt) - (
-                H_total * (Tout[k] - Tin[k]) + Q_solar[k] + Q_int[k]
+        # ------------------------------------------------------------
+        # Heating
+        # ------------------------------------------------------------
+        if Tin_free < (T_heat_set_k - deadband) and heating_allowed:
+            Q_needed = ((T_heat_set_k - Tin[k]) * C / dt) - (
+                H_total * (Tout[k] - Tin[k]) + Q_solar[k] + Q_int[k] + Q_natvent
             )
             Q_hvac[k] = max(Q_needed, 0.0)
 
-        # Cooling mode
-        elif Tin_free > T_cool_set:
+        # ------------------------------------------------------------
+        # Cooling
+        # ------------------------------------------------------------
+        elif Tin_free > (T_cool_set + deadband):
             Q_needed = ((T_cool_set - Tin[k]) * C / dt) - (
-                H_total * (Tout[k] - Tin[k]) + Q_solar[k] + Q_int[k]
+                H_total * (Tout[k] - Tin[k]) + Q_solar[k] + Q_int[k] + Q_natvent
             )
             Q_hvac[k] = min(Q_needed, 0.0)
 
-        # No HVAC needed
+        # ------------------------------------------------------------
+        # No HVAC
+        # ------------------------------------------------------------
         else:
             Q_hvac[k] = 0.0
 
-        # Separate heating and cooling loads
+        # Split loads
         Q_heat[k] = max(Q_hvac[k], 0.0)
         Q_cool[k] = max(-Q_hvac[k], 0.0)
 
-        # Update indoor temperature with HVAC
+        # Update indoor temperature with actual HVAC
         Tin[k + 1] = Tin[k] + (dt / C) * (
-            H_total * (Tout[k] - Tin[k]) + Q_solar[k] + Q_int[k] + Q_hvac[k]
+            H_total * (Tout[k] - Tin[k]) + Q_solar[k] + Q_int[k] + Q_natvent + Q_hvac[k]
         )
 
-    # Copy last values for convenience
+    # Copy last values
     Q_heat[-1] = Q_heat[-2]
     Q_cool[-1] = Q_cool[-2]
     Q_hvac[-1] = Q_hvac[-2]
